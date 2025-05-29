@@ -1,0 +1,25 @@
+# dependências do Node
+node_modules/
+
+# variáveis de ambiente
+.env
+
+# arquivos de log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# cobertura de testes
+coverage/
+
+# saída de build (se usar TypeScript ou bundlers)
+dist/
+build/
