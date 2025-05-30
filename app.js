@@ -1,54 +1,36 @@
-// npm install mysql2
-
-const readline = require('readline');
-const db = require('./database');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 const { gerarSQL, gerarResposta } = require('./gemini');
+const db = require('./database');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+const app = express();
+app.use(cors()); // Permite requisições de outros domínios
+app.use(bodyParser.json()); // Lê o corpo das requisições em formato JSON
 
-async function processarPergunta(pergunta) {
+// Definindo a rota para processar a pergunta
+app.post('/pergunta', async (req, res) => {
   try {
-    console.log('Gerando query SQL com IA...');
+    const { pergunta } = req.body;
+
+    if (!pergunta) {
+      return res.status(400).json({ resposta: 'Pergunta inválida' });
+    }
+
     let query = await gerarSQL(pergunta);
-
-    
     query = query.replace(/```sql|```/g, '').trim();
-    console.log(`Query gerada limpa: ${query}`);
 
-    console.log('Executando query no banco de dados...');
     const [rows] = await db.query(query);
-
-    console.log('Gerando resposta baseada nos dados...');
     const resposta = await gerarResposta(pergunta, rows);
 
-    console.log('\n Resposta:\n' + resposta);
+    res.json({ resposta });
   } catch (err) {
-    console.error('Erro:', err.message); //mostrando erro, caso tenha
+    console.error('Erro no processamento:', err.message);
+    res.status(500).json({ resposta: 'Erro ao processar a pergunta' });
   }
+});
 
-  
-}
-
-async function perguntar() {
-  let input = '';
-
-  while (input.toLowerCase() !== 'sair') {
-    // primeira pergunta para o usuário
-    input = await new Promise(resolve => {
-      rl.question('📨 Faça uma pergunta sobre o banco: ', resolve);
-    });
-
-    if (input.toLowerCase() !== 'sair') {
-      await processarPergunta(input); // pensando na pergunta feita 
-    } else {
-      console.log('Tchau!');
-      rl.close(); //fechando tudo
-      process.exit(); 
-    }
-  }
-}
-
-perguntar(); 
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
